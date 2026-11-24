@@ -1,0 +1,27 @@
+name: Windows build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve verified source
+        shell: pwsh
+        run: ./scripts/import-upstream.ps1
+      - name: Apply community patch
+        run: python scripts/apply-community-patch.py upstream/OmegaSolver-5.0.0-source
+      - name: Build patched WPF source
+        run: dotnet build upstream/OmegaSolver-5.0.0-source/OmegaSolver.csproj -c Release
+      - name: Build independent preview
+        run: dotnet build src/Preview/Preview.csproj -c Release
