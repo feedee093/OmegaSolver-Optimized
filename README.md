@@ -1,18 +1,33 @@
 # OmegaSolver-Optimized
-Community development project by feedee093, inspired by [OmegaSolver V5.0.0](https://github.com/OMEGAALPHA10/OmegaSolver) by OmegaAlpha10 (GPL-3.0). Not an official release.
 
-## Implemented in this repository
-- A verified-source bootstrap script: downloads the upstream source ZIP and checks its pinned SHA-256 before extraction.
-- A standalone .NET 10 read-only cleanup preview component, with cancellation, bounded traversal, conservative path handling and no deletion.
-- GPL-3.0 license and upstream attribution.
+Experimental community edition by feedee093, based on [OmegaSolver V5.0.0](https://github.com/OMEGAALPHA10/OmegaSolver) by OmegaAlpha10 (copyright 2025–2026, GPL-3.0). Not an official release.
 
-## Not yet integrated or tested
-The upstream C# source could not be downloaded in the development environment. The preview component is independent and not wired into WPF. No performance improvements have been measured. Privilege separation, rollback, lazy loading, async UI integration and Windows CI remain pending.
+## Changes / modificaciones
+The uploaded upstream ZIP was inspected and its SHA-256 matched the published release. The repository distributes a source importer and a reproducible community patch, not a prebuilt application.
 
-## Start
-On Windows, run `powershell -File scripts/import-upstream.ps1` from the repository root to retrieve the official source into upstream/. Inspect the source before building. Build the independent preview library using `dotnet build src/Preview/Preview.csproj` with .NET 10 SDK.
+| Change | Status |
+| --- | --- |
+| Verify original ZIP before extraction | Implemented |
+| Skip reparse-point ancestors before cleanup traversal and recheck before deletion | Source patch; best-effort, not race-proof |
+| Avoid collecting unused directories during measurement | Source patch |
+| Report cancellation consistently between cleanup targets | Source patch |
+| Add read-only `--preview-cleanup` command (logical bytes, not guaranteed reclaimable space) | Source patch |
+| Atomic UI log scheduling; cap visible history to 1,000 lines | Source patch |
+| Point update checker to community repository | Source patch |
+| Independent bounded read-only preview library | Implemented separately |
+| Windows compilation, integration tests, benchmarks | Not yet verified |
+| Privilege separation, rollback improvements and lazy loading | Pending |
+
+## Build / compilación
+Windows, .NET 10 SDK and Python 3 required. From the repository root:
+
+```powershell
+powershell -File scripts/import-upstream.ps1
+python scripts/apply-community-patch.py upstream/OmegaSolver-5.0.0-source
+dotnet build upstream/OmegaSolver-5.0.0-source/OmegaSolver.csproj -c Release
+```
+
+Review and test in a disposable Windows VM before running any destructive operation. The community build is unsigned; do not reuse the original publisher's certificate or official installer manifests. The upstream archive is available at [the original release](https://github.com/OMEGAALPHA10/OmegaSolver/releases/tag/v5.0.0). No measured speed or RAM improvement is claimed.
 
 ## Español
-Proyecto comunitario experimental, no versión oficial. Se incorpora un importador con verificación SHA-256 y un componente de simulación de limpieza sin borrado, cancelable y con límites. No se ha integrado aún con la interfaz original ni se han validado mejoras de rendimiento.
-
-Original: OmegaAlpha10, OmegaSolver V5.0.0, copyright 2025–2026. License: GPL-3.0.
+Se revisó el código C# original y se añadió un parche reproducible para reducir asignaciones durante la medición, reforzar comprobaciones de enlaces de directorio, mejorar la cancelación, limitar el historial visual de registros y añadir una vista previa por consola sin borrado. Estas modificaciones aún requieren compilación y pruebas en Windows. Se conserva la autoría y licencia originales. No es una versión oficial.
