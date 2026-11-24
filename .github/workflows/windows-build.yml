@@ -1,6 +1,7 @@
-name: Windows build
+name: Build Windows EXE
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -8,6 +9,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -21,7 +23,22 @@ jobs:
         run: ./scripts/import-upstream.ps1
       - name: Apply community patch
         run: python scripts/apply-community-patch.py upstream/OmegaSolver-5.0.0-source
-      - name: Build patched WPF source
-        run: dotnet build upstream/OmegaSolver-5.0.0-source/OmegaSolver.csproj -c Release
       - name: Build independent preview
         run: dotnet build src/Preview/Preview.csproj -c Release
+      - name: Publish portable Windows x64 EXE
+        shell: pwsh
+        run: |
+          dotnet publish upstream/OmegaSolver-5.0.0-source/OmegaSolver.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o dist
+          if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
+          if (!(Test-Path dist/OmegaSolver.exe)) { throw 'Executable missing' }
+          New-Item -ItemType Directory -Path artifact -Force | Out-Null
+          Copy-Item dist/OmegaSolver.exe artifact/OmegaSolver.exe
+          $hash = (Get-FileHash artifact/OmegaSolver.exe -Algorithm SHA256).Hash
+          "$hash  OmegaSolver.exe" | Set-Content artifact/SHA256SUMS.txt
+          'Experimental unsigned community build; not tested for destructive operations.' | Set-Content artifact/NOTICE.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OmegaSolver-Optimized-win-x64
+          path: artifact/
+          if-no-files-found: error
+          retention-days: 30
